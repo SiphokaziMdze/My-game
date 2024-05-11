@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match-3 Puzzle Game</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; margin: auto; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div id="score">Score: 0</div>
+    <div id="level">Level: 1</div>
+    <script>
+        // Constants
+        const ROWS = 8;
+        const COLS = 8;
+        const GEM_SIZE = 50;
+        const SWAP_SPEED = 5; // Pixels per frame
+        const MATCH_SCORE = 100;
+        const LEVEL_UP_SCORE = 1000;
+
+        // Game state
+        let gems = [];
+        let selectedGem = null;
+        let targetGem = null;
+        let isSwapping = false;
+        let score = 0;
+        let level = 1;
+
+        // Initialize game
+        function initGame() {
+            score = 0;
+            level = 1;
+            document.getElementById("score").innerText = "Score: " + score;
+            document.getElementById("level").innerText = "Level: " + level;
+
+            for (let i = 0; i < ROWS; i++) {
+                gems[i] = [];
+                for (let j = 0; j < COLS; j++) {
+                    gems[i][j] = Math.floor(Math.random() * 6); // Randomly assign gem types
+                }
+            }
+        }
+
+        // Render game
+        function render() {
+            const canvas = document.getElementById("gameCanvas");
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < ROWS; i++) {
+                for (let j = 0; j < COLS; j++) {
+                    const gemType = gems[i][j];
+                    const x = j * GEM_SIZE;
+                    const y = i * GEM_SIZE;
+                    ctx.fillStyle = getColor(gemType);
+                    ctx.fillRect(x, y, GEM_SIZE, GEM_SIZE);
+                }
+            }
+
+            if (isSwapping) {
+                animateSwap();
+            }
+
+            checkAndRemoveMatches();
+        }
+
+        // Get color based on gem type
+        function getColor(gemType) {
+            switch (gemType) {
+                case 0: return "red";
+                case 1: return "blue";
+                case 2: return "green";
+                case 3: return "yellow";
+                case 4: return "purple";
+                case 5: return "orange";
+                default: return "black";
+            }
+        }
+
+        // Swap gems
+        function swap(x1, y1, x2, y2) {
+            const temp = gems[y1][x1];
+            gems[y1][x1] = gems[y2][x2];
+            gems[y2][x2] = temp;
+        }
+
+        // Handle player input
+        function handleInput(event) {
+            if (!isSwapping) {
+                const canvas = document.getElementById("gameCanvas");
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+
+                const gemX = Math.floor(mouseX / GEM_SIZE);
+                const gemY = Math.floor(mouseY / GEM_SIZE);
+
+                if (!selectedGem) {
+                    selectedGem = { x: gemX, y: gemY };
+                } else {
+                    targetGem = { x: gemX, y: gemY };
+                    if (isAdjacent(selectedGem, targetGem)) {
+                        swap(selectedGem.x, selectedGem.y, targetGem.x, targetGem.y);
+                        isSwapping = true;
+                    }
+                    selectedGem = null;
+                    targetGem = null;
+                }
+            }
+        }
+
+        // Check if two gems are adjacent
+        function isAdjacent(gem1, gem2) {
+            const dx = Math.abs(gem1.x - gem2.x);
+            const dy = Math.abs(gem1.y - gem2.y);
+            return (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
+        }
+
+        // Animate gem swap
+        function animateSwap() {
+            const dx = targetGem.x - selectedGem.x;
+            const dy = targetGem.y - selectedGem.y;
+
+            if (dx !== 0) {
+                if (dx > 0) {
+                    gems[selectedGem.y][selectedGem.x] = gems[selectedGem.y][selectedGem.x + 1];
+                    gems[selectedGem.y][selectedGem.x + 1] = null;
+                } else {
+                    gems[selectedGem.y][selectedGem.x] = gems[selectedGem.y][selectedGem.x - 1];
+                    gems[selectedGem.y][selectedGem.x - 1] = null;
+                }
+            } else if (dy !== 0) {
+                if (dy > 0) {
+                    gems[selectedGem.y][selectedGem.x] = gems[selectedGem.y + 1][selectedGem.x];
+                    gems[selectedGem.y + 1][selectedGem.x] = null;
+                } else {
+                    gems[selectedGem.y][selectedGem.x] = gems[selectedGem.y - 1][selectedGem.x];
+                    gems[selectedGem.y - 1][selectedGem.x] = null;
+                }
+            }
+
+            render();
+
+            if (dx !== 0 || dy !== 0) {
+                setTimeout(animateSwap, SWAP_SPEED);
+            } else {
+                isSwapping = false;
+            }
+        }
+
+        // Check and remove matches
+        function checkAndRemoveMatches() {
+            let matchedGems = [];
+
+            // Check horizontally
+            for (let i = 0; i < ROWS; i++) {
+                for (let j = 0; j < COLS - 2; j++) {
+                    if (gems[i][j] === gems[i][j + 1] && gems[i][j] === gems[i][j + 2]) {
+                        matchedGems.push({ x: j, y: i }, { x: j + 1, y: i }, { x: j + 2, y: i });
+                    }
+                }
+            }
+
+            // Check vertically
+            for (let i = 0; i < ROWS - 2; i++) {
+                for (let j = 0; j < COLS; j++) {
+                    if (gems[i][j] === gems[i + 1][j] && gems[i][j] === gems[i + 2][j]) {
+                        matchedGems.push({ x: j, y: i }, { x: j, y: i + 1 }, { x: j, y: i + 2 });
+                    }
+                }
+            }
+
+            // Remove matched gems and update score
+            if (matchedGems.length > 0) {
+                score += matchedGems.length * MATCH_SCORE;
+                document.getElementById("score").innerText = "Score: " + score;
+
+                for (let i = 0; i < matchedGems.length; i++) {
+                    const gem = matchedGems[i];
+                    gems[gem.y][gem.x] = null;
+                }
+
+                refillBoard();
+            }
+
+            // Check for level up
+            if (score >= LEVEL_UP_SCORE * level) {
+                level++;
+                document.getElementById("level").innerText = "Level: " + level;
+            }
+        }
+
+        // Refill the board after removing matched gems
+        function refillBoard() {
+            for (let j = 0; j < COLS; j++) {
+                for (let i = ROWS - 1; i >= 0; i--) {
+                    if (gems[i][j] === null) {
+                        let k = i;
+                        while (k > 0 && gems[k][j] === null) {
+                            k--;
+                        }
+                        gems[i][j] = gems[k][j];
+                        gems[k][j] = null;
+                    }
+                }
+            }
+
+            // Fill empty spaces with new gems
+            for (let i = 0; i < ROWS; i++) {
+                for (let j = 0; j < COLS; j++) {
+                    if (gems[i][j] === null) {
+                        gems[i][j] = Math.floor(Math.random() * 6); // Randomly assign gem types
+                    }
+                }
+            }
+        }
+
+        // Initialize and start the game loop
+        function startGame() {
+            initGame();
+            const canvas = document.getElementById("gameCanvas");
+            canvas.addEventListener("click", handleInput);
+            setInterval(function() {
+                render();
+            }, 1000 / 60); // 60 FPS
+        }
+
+        // Start the game
+        startGame();
+    </script>
+</body>
+</html>

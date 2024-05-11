@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Platformer Game</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; margin: auto; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <script>
+        // Constants
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const GRAVITY = 0.5;
+        const JUMP_FORCE = 10;
+        const MOVE_SPEED = 5;
+        const PLAYER_WIDTH = 50;
+        const PLAYER_HEIGHT = 50;
+        const GROUND_HEIGHT = 50;
+        const LEVEL_WIDTH = 800;
+        const LEVEL_HEIGHT = 600;
+
+        // Game state
+        let player = {
+            x: canvas.width / 2 - PLAYER_WIDTH / 2,
+            y: canvas.height - PLAYER_HEIGHT - GROUND_HEIGHT,
+            velocityX: 0,
+            velocityY: 0,
+            isJumping: false
+        };
+
+        let platforms = [
+            { x: 0, y: canvas.height - GROUND_HEIGHT, width: LEVEL_WIDTH, height: GROUND_HEIGHT },
+            { x: 200, y: canvas.height - GROUND_HEIGHT - 100, width: 150, height: 20 }, // Additional platform 1
+            { x: 400, y: canvas.height - GROUND_HEIGHT - 200, width: 150, height: 20 }, // Additional platform 2
+            // Add more platforms here for level design
+        ];
+
+        let obstacles = [
+            { x: 300, y: canvas.height - GROUND_HEIGHT - 120, width: 50, height: 50 }, // Additional obstacle 1
+            { x: 600, y: canvas.height - GROUND_HEIGHT - 220, width: 50, height: 50 }, // Additional obstacle 2
+            // Add more obstacles here
+        ];
+
+        // Input state
+        let keys = {
+            left: false,
+            right: false,
+            up: false
+        };
+
+        // Event listeners
+        document.addEventListener("keydown", keyDownHandler);
+        document.addEventListener("keyup", keyUpHandler);
+
+        function keyDownHandler(event) {
+            if (event.key === "ArrowLeft" || event.key === "a") {
+                keys.left = true;
+            }
+            if (event.key === "ArrowRight" || event.key === "d") {
+                keys.right = true;
+            }
+            if (event.key === "ArrowUp" || event.key === "w") {
+                keys.up = true;
+            }
+        }
+
+        function keyUpHandler(event) {
+            if (event.key === "ArrowLeft" || event.key === "a") {
+                keys.left = false;
+            }
+            if (event.key === "ArrowRight" || event.key === "d") {
+                keys.right = false;
+            }
+            if (event.key === "ArrowUp" || event.key === "w") {
+                keys.up = false;
+            }
+        }
+
+        // Main game loop
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw platforms
+            ctx.fillStyle = "gray";
+            for (let i = 0; i < platforms.length; i++) {
+                ctx.fillRect(platforms[i].x, platforms[i].y, platforms[i].width, platforms[i].height);
+            }
+
+            // Draw obstacles
+            ctx.fillStyle = "red";
+            for (let i = 0; i < obstacles.length; i++) {
+                ctx.fillRect(obstacles[i].x, obstacles[i].y, obstacles[i].width, obstacles[i].height);
+            }
+
+            // Update player position
+            if (keys.left) {
+                player.velocityX = -MOVE_SPEED;
+            } else if (keys.right) {
+                player.velocityX = MOVE_SPEED;
+            } else {
+                player.velocityX = 0;
+            }
+
+            if (keys.up && !player.isJumping) {
+                player.velocityY = -JUMP_FORCE;
+                player.isJumping = true;
+            }
+
+            player.velocityY += GRAVITY;
+            player.x += player.velocityX;
+            player.y += player.velocityY;
+
+            // Check collision with platforms
+            for (let i = 0; i < platforms.length; i++) {
+                let p = platforms[i];
+                if (
+                    player.x < p.x + p.width &&
+                    player.x + PLAYER_WIDTH > p.x &&
+                    player.y < p.y + p.height &&
+                    player.y + PLAYER_HEIGHT > p.y
+                ) {
+                    // Collided with platform
+                    if (player.velocityY > 0 && player.y + PLAYER_HEIGHT <= p.y + Math.abs(player.velocityY)) {
+                        player.y = p.y - PLAYER_HEIGHT;
+                        player.velocityY = 0;
+                        player.isJumping = false;
+                    }
+                }
+            }
+
+            // Check collision with obstacles
+            for (let i = 0; i < obstacles.length; i++) {
+                let o = obstacles[i];
+                if (
+                    player.x < o.x + o.width &&
+                    player.x + PLAYER_WIDTH > o.x &&
+                    player.y < o.y + o.height &&
+                    player.y + PLAYER_HEIGHT > o.y
+                ) {
+                    // Collided with obstacle, reset player position
+                    player.x = canvas.width / 2 - PLAYER_WIDTH / 2;
+                    player.y = canvas.height - PLAYER_HEIGHT - GROUND_HEIGHT;
+                }
+            }
+
+            // Draw player
+            ctx.fillStyle = "blue";
+            ctx.fillRect(player.x, player.y, PLAYER_WIDTH, PLAYER_HEIGHT);
+
+            requestAnimationFrame(draw);
+        }
+
+        // Start the game loop
+        draw();
+    </script>
+</body>
+</html>
