@@ -4,15 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        body{
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
     
-    <canvas
-         width="550"
-         height="550"
-         style="background-color: brown; border: 5px solid orangered;"    
-    ></canvas>
+    <div id="gameContainer">
+        <canvas id="gameboard" width="500" height="500"></canvas>
+        <div id="scoreBox">
+            <p>Current Score: <span id="currentScore">0</span></p>
+            <p>Highest Score: <span id="highestScore">0</span></p>
+        </div>
+    </div>
 
-    <script src="main.js"></script>
+    <script src="main1.js"></script>
 </body>
 </html>

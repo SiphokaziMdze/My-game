@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game with WebGL</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        var canvas = document.getElementById("gameCanvas");
+        var gl = canvas.getContext("webgl");
+
+        if (!gl) {
+            alert("WebGL is not supported by your browser!");
+        }
+
+        var blockSize = 25;
+        var rows = 20;
+        var cols = 20;
+        var snakeX = blockSize * 5;
+        var snakeY = blockSize * 5;
+        var velocityX = 0;
+        var velocityY = 0;
+        var snakeBody = [];
+        var foodX;
+        var foodY;
+        var gameOver = false;
+
+        canvas.height = rows * blockSize;
+        canvas.width = cols * blockSize;
+
+        var vsSource = `
+            attribute vec2 position;
+            void main() {
+                gl_Position = vec4(position, 0.0, 1.0);
+                gl_PointSize = ${blockSize}.0;
+            }
+        `;
+
+        var fsSource = `
+            precision mediump float;
+            uniform vec4 color;
+            void main() {
+                gl_FragColor = color;
+            }
+        `;
+
+        var vs = gl.createShader(gl.VERTEX_SHADER);
+        gl.shaderSource(vs, vsSource);
+        gl.compileShader(vs);
+
+        var fs = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(fs, fsSource);
+        gl.compileShader(fs);
+
+        var program = gl.createProgram();
+        gl.attachShader(program, vs);
+        gl.attachShader(program, fs);
+        gl.linkProgram(program);
+        gl.useProgram(program);
+
+        var positionAttribLocation = gl.getAttribLocation(program, "position");
+        gl.enableVertexAttribArray(positionAttribLocation);
+
+        var colorUniformLocation = gl.getUniformLocation(program, "color");
+
+        function renderSnake() {
+            gl.uniform4fv(colorUniformLocation, [0.0, 1.0, 0.0, 1.0]); // Green color for snake
+
+            for (let i = 0; i < snakeBody.length; i++) {
+                gl.bindBuffer(gl.ARRAY_BUFFER, snakeBody[i].buffer);
+                gl.vertexAttribPointer(positionAttribLocation, 2, gl.FLOAT, false, 0, 0);
+                gl.drawArrays(gl.POINTS, 0, 1);
+            }
+        }
+
+        function renderFood() {
+            gl.uniform4fv(colorUniformLocation, [1.0, 0.0, 0.0, 1.0]); // Red color for food
+            gl.bindBuffer(gl.ARRAY_BUFFER, foodBuffer);
+            gl.vertexAttribPointer(positionAttribLocation, 2, gl.FLOAT, false, 0, 0);
+            gl.drawArrays(gl.POINTS, 0, 1);
+        }
+
+        function update() {
+            snakeX += velocityX * blockSize;
+            snakeY += velocityY * blockSize;
+
+            if (snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height) {
+                gameOver = true;
+            }
+
+            for (let i = 0; i < snakeBody.length; i++) {
+                if (snakeX === snakeBody[i].x && snakeY === snakeBody[i].y) {
+                    gameOver = true;
+                    break;
+                }
+            }
+
+            if (gameOver) {
+                alert("Game Over!");
+                return;
+            }
+
+            snakeBody.unshift({ x: snakeX, y: snakeY });
+
+            if (snakeX === foodX && snakeY === foodY) {
+                placeFood();
+            } else {
+                snakeBody.pop();
+            }
+        }
+
+        function mainLoop() {
+            update();
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            renderSnake();
+            renderFood();
+
+            if (!gameOver) {
+                requestAnimationFrame(mainLoop);
+            }
+        }
+
+        function placeFood() {
+            foodX = Math.floor(Math.random() * cols) * blockSize;
+            foodY = Math.floor(Math.random() * rows) * blockSize;
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, foodBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([foodX, foodY]), gl.STATIC_DRAW);
+        }
+
+        document.addEventListener("keydown", function (e) {
+            switch (e.key) {
+                case "ArrowUp":
+                    if (velocityY !== 1) {
+                        velocityX = 0;
+                        velocityY = -1;
+                    }
+                    break;
+                case "ArrowDown":
+                    if (velocityY !== -1) {
+                        velocityX = 0;
+                        velocityY = 1;
+                    }
+                    break;
+                case "ArrowLeft":
+                    if (velocityX !== 1) {
+                        velocityX = -1;
+                        velocityY = 0;
+                    }
+                    break;
+                case "ArrowRight":
+                    if (velocityX !== -1) {
+                        velocityX = 1;
+                        velocityY = 0;
+                    }
+                    break;
+            }
+        });
+
+        var foodBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, foodBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([foodX, foodY]), gl.STATIC_DRAW);
+
+        placeFood();
+        mainLoop();
+    </script>
+</body>
+</html>
+

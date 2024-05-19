@@ -1,0 +1,41 @@
+body{
+    text-align: center;
+    background-color: rgb(219, 140, 140);
+}
+
+canvas{
+    
+    box-shadow: red 20px 10px 50px;
+    margin-bottom: 1px;
+}
+
+#scoreBoard {
+    border: 1px solid #000;
+    padding: 10px;
+    margin-left: 20px;
+    width: 150px;
+}
+
+#buttonContainer{
+    margin-top: 1px;
+}
+
+
+button {
+    border: none;
+    background-color: #4CAF50;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    margin-top: 1px;
+    cursor: pointer;
+    border-radius: 50px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
